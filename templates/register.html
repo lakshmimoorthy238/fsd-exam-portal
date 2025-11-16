@@ -1,19 +1,110 @@
 {% extends 'layout.html' %}
+{% block title %}Register{% endblock %}
+
 {% block content %}
-<h3>Register</h3>
-<form method="post">
-  <div class="mb-3">
-    <label>Email</label>
-    <input class="form-control" name="email" required>
+<div class="row justify-content-center">
+  <div class="col-md-8 col-lg-6">
+    <div class="card shadow-sm">
+      <div class="card-body p-4">
+        <h4 class="mb-3">Create an account</h4>
+
+        <form id="regForm" method="post" novalidate>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Full name</label>
+              <input type="text" name="full_name" class="form-control" required minlength="2">
+              <div class="invalid-feedback">Enter your full name.</div>
+            </div>
+
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Email</label>
+              <input type="email" name="email" class="form-control" required placeholder="you@example.com">
+              <div class="invalid-feedback">A valid email is required.</div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Qualification</label>
+              <input type="text" name="qualification" class="form-control">
+              <div class="invalid-feedback">Optional but helpful.</div>
+            </div>
+
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Date of birth</label>
+              <input type="date" name="dob" class="form-control" required max="{{ today }}">
+
+              <div class="invalid-feedback">Please choose a valid dob.</div>
+            </div>
+          </div>
+
+          <div class="mb-3 position-relative">
+            <label class="form-label">Password</label>
+            <div class="input-group">
+              <input type="password" id="regPassword" name="password" class="form-control" required minlength="6" placeholder="At least 6 characters">
+              <button class="btn btn-outline-secondary" type="button" id="toggleRegPwd" tabindex="-1"><i class="bi bi-eye"></i></button>
+            </div>
+            <div class="form-text small">Use letters and numbers — avoid easy passwords.</div>
+            <div class="invalid-feedback">Enter a password (min 6 characters).</div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Confirm password</label>
+            <input type="password" id="regPasswordConfirm" class="form-control" required minlength="6" placeholder="Re-type password">
+            <div class="invalid-feedback" id="confirmError">Passwords must match.</div>
+          </div>
+
+          <div class="d-flex justify-content-between align-items-center">
+            <a href="{{ url_for('login') }}">Already have an account?</a>
+            <button class="btn btn-primary" type="submit">Register</button>
+          </div>
+        </form>
+
+      </div>
+    </div>
   </div>
-  <div class="mb-3">
-    <label>Password</label>
-    <input type="password" class="form-control" name="password" required>
-  </div>
-  <div class="mb-3">
-    <label>Full name</label>
-    <input class="form-control" name="full_name">
-  </div>
-  <button class="btn btn-success">Register</button>
-</form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  (function(){
+    const form = document.getElementById('regForm');
+    const pwd = document.getElementById('regPassword');
+    const confirm = document.getElementById('regPasswordConfirm');
+
+    // password show/hide
+    document.getElementById('toggleRegPwd').addEventListener('click', function(){
+      const icon = this.querySelector('i');
+      if(pwd.type==='password'){ pwd.type='text'; icon.className='bi bi-eye-slash'; }
+      else { pwd.type='password'; icon.className='bi bi-eye'; }
+    });
+
+    // simple strength hint (client-side only)
+    pwd.addEventListener('input', function(){
+      const len = pwd.value.length;
+      // you can enhance with regex (uppercase, number, symbol)
+      if(len < 6) pwd.setCustomValidity('too-short');
+      else pwd.setCustomValidity('');
+    });
+
+    // submission validation
+    form.addEventListener('submit', function(e){
+      // built-in checks first
+      if(!form.checkValidity()){
+        e.preventDefault(); e.stopPropagation();
+      } else {
+        // ensure passwords match
+        if(pwd.value !== confirm.value){
+          e.preventDefault(); e.stopPropagation();
+          confirm.setCustomValidity('mismatch');
+          document.getElementById('confirmError').style.display = 'block';
+        } else {
+          confirm.setCustomValidity('');
+        }
+      }
+      form.classList.add('was-validated');
+    }, false);
+  })();
+</script>
 {% endblock %}

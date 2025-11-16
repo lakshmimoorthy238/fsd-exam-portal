@@ -11,8 +11,13 @@
       {% if q.duration_minutes %} <small> • Duration: {{ q.duration_minutes }} minutes</small>{% endif %}
     </div>
     <div>
-      <a class="btn btn-sm btn-success" href="{{ url_for('take_quiz', quiz_id=q.id) }}">Take Quiz</a>
-    </div>
+  <a class="btn btn-sm btn-success" href="{{ url_for('take_quiz', quiz_id=q.id) }}">
+    Take Quiz
+  </a>
+</div>
+
+
+
   </li>
   {% else %}
     <li class="list-group-item">No quizzes available.</li>

@@ -1,35 +1,158 @@
 {% extends 'layout.html' %}
+{% block title %}Admin Dashboard{% endblock %}
+
 {% block content %}
-<h3>Admin Dashboard</h3>
-
-<p>
-  Users: <strong>{{ user_count }}</strong> — Quizzes: <strong>{{ quiz_count }}</strong>
-</p>
-
-<!-- NAVIGATION BUTTONS FOR ADMIN -->
-<div class="mb-4">
-  <a class="btn btn-primary me-2" href="{{ url_for('admin_subjects') }}">Manage Subjects</a>
-  <a class="btn btn-primary me-2" href="{{ url_for('admin_chapters') }}">Manage Chapters</a>
-  <a class="btn btn-primary me-2" href="{{ url_for('admin_quizzes') }}">Manage Quizzes</a>
-  <a class="btn btn-secondary" href="{{ url_for('admin_users') }}">View Users</a>
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3 class="mb-0">Admin Dashboard</h3>
+  <div>
+    <a class="btn btn-outline-primary me-2" href="{{ url_for('admin_subjects') }}">Manage Subjects</a>
+    <a class="btn btn-outline-primary me-2" href="{{ url_for('admin_chapters') }}">Manage Chapters</a>
+    <a class="btn btn-outline-primary me-2" href="{{ url_for('admin_quizzes') }}">Manage Quizzes</a>
+    <a class="btn btn-secondary" href="{{ url_for('admin_users') }}">All Users</a>
+  </div>
 </div>
 
-<h5>Subjects</h5>
-<ul class="list-group">
-  {% for s in subjects %}
-    <li class="list-group-item d-flex justify-content-between align-items-center">
-      <div>
-        <strong>{{ s.name }}</strong><br><small>{{ s.description or '' }}</small>
+<!-- summary cards -->
+<div class="row g-3 mb-4">
+  <div class="col-sm-6 col-md-3">
+    <div class="card p-3 shadow-sm">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <h6 class="mb-1">Users</h6>
+          <div class="h4 mb-0">{{ user_count or 0 }}</div>
+          <small class="text-muted">Registered users</small>
+        </div>
+        <div class="text-primary fs-2">
+          <i class="bi bi-people-fill"></i>
+        </div>
       </div>
-      <div>
-        <a class="btn btn-sm btn-outline-primary" href="{{ url_for('admin_edit_subject', subject_id=s.id) }}">Edit</a>
-        <form method="post" action="{{ url_for('admin_delete_subject', subject_id=s.id) }}" style="display:inline" onsubmit="return confirm('Delete subject?')">
-          <button class="btn btn-sm btn-outline-danger">Delete</button>
-        </form>
+    </div>
+  </div>
+
+  <div class="col-sm-6 col-md-3">
+    <div class="card p-3 shadow-sm">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <h6 class="mb-1">Subjects</h6>
+          <div class="h4 mb-0">{{ subject_count or 0 }}</div>
+          <small class="text-muted">Total subjects</small>
+        </div>
+        <div class="text-success fs-2"><i class="bi bi-book-fill"></i></div>
       </div>
-    </li>
-  {% else %}
-    <li class="list-group-item">No subjects yet.</li>
-  {% endfor %}
-</ul>
+    </div>
+  </div>
+
+  <div class="col-sm-6 col-md-3">
+    <div class="card p-3 shadow-sm">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <h6 class="mb-1">Chapters</h6>
+          <div class="h4 mb-0">{{ chapter_count or 0 }}</div>
+          <small class="text-muted">Total chapters</small>
+        </div>
+        <div class="text-warning fs-2"><i class="bi bi-journal-text"></i></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-sm-6 col-md-3">
+    <div class="card p-3 shadow-sm">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <h6 class="mb-1">Quizzes</h6>
+          <div class="h4 mb-0">{{ quiz_count or 0 }}</div>
+          <small class="text-muted">Active & scheduled</small>
+        </div>
+        <div class="text-danger fs-2"><i class="bi bi-card-checklist"></i></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- search + small chart -->
+<div class="row g-3 mb-4">
+  <div class="col-lg-6">
+    <div class="card p-3 shadow-sm">
+      <form method="get" action="{{ url_for('admin_dashboard') }}" class="d-flex gap-2">
+        <input name="q" class="form-control" placeholder="Search users, subjects, quizzes..." value="{{ request.args.get('q','') }}">
+        <button class="btn btn-outline-primary">Search</button>
+      </form>
+      <div class="mt-2 small text-muted">Tip: search by email, subject name or quiz title.</div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card p-3 shadow-sm">
+      <h6>Avg score per quiz</h6>
+      <canvas id="adminAvgChart" height="80"></canvas>
+      <div class="small text-muted mt-2">Average score (%) across quizzes</div>
+    </div>
+  </div>
+</div>
+
+<!-- recent lists -->
+<div class="row g-3">
+  <div class="col-lg-6">
+    <div class="card p-3 shadow-sm">
+      <h6 class="mb-3">Recent Quizzes</h6>
+      <ul class="list-group list-group-flush">
+        {% for q in recent_quizzes %}
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+              <strong>{{ q.title }}</strong><br><small class="text-muted">{{ q.chapter_name or '' }} — {{ q.start_datetime or 'No schedule' }}</small>
+            </div>
+            <div class="text-end">
+              <a class="btn btn-sm btn-outline-primary" href="{{ url_for('admin_edit_quiz', quiz_id=q.id) }}">Edit</a>
+            </div>
+          </li>
+        {% else %}
+          <li class="list-group-item">No quizzes yet.</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card p-3 shadow-sm">
+      <h6 class="mb-3">Recent Users</h6>
+      <ul class="list-group list-group-flush">
+        {% for u in recent_users %}
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+              <strong>{{ u.full_name or u.email }}</strong><br><small class="text-muted">{{ u.email }}</small>
+            </div>
+            <div class="text-end">
+              <!-- link to the users listing (no single-user view endpoint in your app) -->
+              <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('admin_users') }}">View</a>
+            </div>
+          </li>
+        {% else %}
+          <li class="list-group-item">No users yet.</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="mt-4 small text-muted">Last refreshed: {{ last_refreshed or "-" }}</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const quizLabels = {{ avg_quiz_labels|default('[]')|safe }};
+  const quizAvgs = {{ avg_quiz_avgs|default('[]')|safe }};
+
+  new Chart(document.getElementById('adminAvgChart'), {
+    type: 'bar',
+    data: {
+      labels: quizLabels,
+      datasets: [{ label: 'Avg %', data: quizAvgs }]
+    },
+    options: {
+      scales: { y: { beginAtZero: true, max: 100 } },
+      plugins: { legend: { display: false } }
+    }
+  });
+</script>
 {% endblock %}

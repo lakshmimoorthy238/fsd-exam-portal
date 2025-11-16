@@ -1,0 +1,39 @@
+/* static/css/style.css */
+
+/* subtle global sizing */
+body { font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; }
+
+/* hero tweaks */
+.display-5 { line-height: 1.05; }
+
+/* card hover */
+.card:hover { transform: translateY(-4px); transition: transform .18s ease; }
+
+/* mobile spacing */
+@media (max-width: 576px) {
+  .display-5 { font-size: 1.6rem; }
+  .lead { font-size: .95rem; }
+}
+
+/* nicer code snippets */
+code { background: #f3f4f6; padding: .1rem .3rem; border-radius: 4px; font-size: .9em; }
+
+/* quiz page supplementary styles */
+.list-group-item { cursor: pointer; }
+.list-group-item input { transform: translateY(0.1rem); }
+.question-card { overflow: hidden; }
+.question-card .card-footer { background: #fafafa; }
+.nav-q { user-select: none; }
+
+/* admin dashboard small styles */
+.card p small.text-muted { opacity: .9; }
+.list-group-item strong { display:block; }
+
+/* subjects grid styling */
+.subject-card { transition: transform .12s ease, box-shadow .12s ease; }
+.subject-card .card { border-radius: 12px; }
+.subject-card .card:hover { transform: translateY(-6px); box-shadow: 0 14px 32px rgba(20,20,40,0.08); }
+.subject-card .card-title { font-weight:600; }
+@media (max-width:767px){
+  .subject-card .card { border-radius: 8px; }
+}

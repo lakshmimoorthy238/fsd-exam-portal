@@ -1,23 +1,104 @@
 {% extends 'layout.html' %}
+{% block title %}Available Subjects{% endblock %}
+
 {% block content %}
-<h3>Available Subjects</h3>
-<div class="mb-3">
-  <a class="btn btn-sm btn-primary" href="{{ url_for('list_quizzes') }}">All Quizzes</a>
-  <a class="btn btn-sm btn-secondary" href="{{ url_for('my_attempts') }}">My Attempts</a>
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-start gap-3 mb-4">
+  <div>
+    <h2 class="mb-1">Available Subjects</h2>
+    <p class="text-muted mb-0">Pick a subject and practise quizzes to track your progress.</p>
+  </div>
+
+  <div class="d-flex gap-2 align-items-center w-100 w-md-auto">
+    <div class="input-group" style="min-width:260px; max-width:420px;">
+      <span class="input-group-text"><i class="bi bi-search"></i></span>
+      <input id="subjectSearch" type="text" class="form-control" placeholder="Search subjects..." aria-label="Search subjects">
+    </div>
+
+    <a class="btn btn-outline-secondary d-none d-md-inline" href="{{ url_for('my_attempts') }}">
+      <i class="bi bi-clock-history me-1"></i> My Attempts
+    </a>
+
+    {% if session.get('role') == 'admin' %}
+      <a class="btn btn-primary" href="{{ url_for('add_subject') }}">
+        <i class="bi bi-plus-lg me-1"></i> Add Subject
+      </a>
+    {% endif %}
+  </div>
 </div>
 
-<ul class="list-group">
-  {% for s in subjects %}
-    <li class="list-group-item d-flex justify-content-between align-items-center">
-      <div>
-        <strong>{{ s.name }}</strong><br><small>{{ s.description or '' }}</small>
+<div id="subjectsGrid" class="row g-3">
+  {% if subjects %}
+    {% for s in subjects %}
+      <div class="col-12 col-sm-6 col-md-4 col-lg-3 subject-card" data-title="{{ s.name|lower }} {{ (s.description or '')|lower }}">
+        <div class="card h-100 shadow-sm border-0">
+          <div class="card-body d-flex flex-column">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <div>
+                <h5 class="card-title mb-1 text-capitalize">{{ s.name }}</h5>
+                <p class="card-text text-muted small mb-0">{{ s.description or 'No description' }}</p>
+              </div>
+              <div class="ms-2 text-muted">
+                <i class="bi bi-book-half fs-3"></i>
+              </div>
+            </div>
+
+            <div class="mt-auto d-flex justify-content-between align-items-center pt-3">
+              <div class="small text-muted">Chapters: {{ s.ch_count or 0 }}</div>
+              <div>
+                <a class="btn btn-sm btn-outline-primary" href="{{ url_for('view_subject', subject_id=s.id) }}">
+                  View Quizzes
+                </a>
+                {% if session.get('role') == 'admin' %}
+                  <a class="btn btn-sm btn-outline-secondary ms-1" href="{{ url_for('admin_edit_subject', subject_id=s.id) }}">Edit</a>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-      <div>
-        <a class="btn btn-sm btn-outline-primary" href="{{ url_for('quizzes_by_subject', subject_id=s.id) }}">View Quizzes</a>
-      </div>
-    </li>
+    {% endfor %}
   {% else %}
-    <li class="list-group-item">No subjects yet.</li>
-  {% endfor %}
-</ul>
+    <div class="col-12">
+      <div class="card p-4 text-center">
+        <h5 class="mb-2">No subjects yet</h5>
+        <p class="text-muted mb-3">Admins can add subjects and chapters from the Admin panel.</p>
+        {% if session.get('role') == 'admin' %}
+          <a class="btn btn-primary" href="{{ url_for('add_subject') }}">Add your first subject</a>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  (function(){
+    const search = document.getElementById('subjectSearch');
+    const cards = Array.from(document.querySelectorAll('.subject-card'));
+
+    function filterSubjects() {
+      const q = search.value.trim().toLowerCase();
+      if(!q) {
+        cards.forEach(c => c.style.display = '');
+        return;
+      }
+      cards.forEach(c => {
+        const text = c.dataset.title || '';
+        c.style.display = text.includes(q) ? '' : 'none';
+      });
+    }
+
+    search.addEventListener('input', filterSubjects);
+
+    // small enhancement: show counts for each subject if not set (server-side might not provide ch_count)
+    cards.forEach(c => {
+      const el = c.querySelector('.small.text-muted');
+      if(el && el.innerText.trim().endsWith('0')) {
+        // keep as-is; placeholder for further enhancement
+      }
+    });
+  })();
+</script>
 {% endblock %}

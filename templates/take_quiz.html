@@ -1,59 +1,320 @@
 {% extends 'layout.html' %}
+{% block title %}{{ quiz.title }}{% endblock %}
+
+{% block head %}
+<style>
+  /* small inline tweaks specific to quiz page (kept local) */
+  .quiz-timer {
+    position: sticky;
+    top: 1rem;
+    z-index: 40;
+    display:flex;
+    gap:.5rem;
+    align-items:center;
+  }
+  .question-card { transition: box-shadow .12s ease, transform .12s ease; }
+  .question-card.active { box-shadow: 0 8px 24px rgba(24,24,24,0.08); transform: translateY(-4px); }
+  .nav-q {
+    min-width: 2.6rem;
+    height:2.6rem;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:6px;
+    border:1px solid #e6e6e6;
+    cursor:pointer;
+  }
+  .nav-q.done { background:#e9f7ef; border-color:#bfe9c9; color:#1f8a39; }
+  .nav-q.current { border-color:#0d6efd; background:#e7f0ff; color:#0d6efd; font-weight:600; }
+  .sticky-top-right { position: fixed; right: 1rem; top: 70px; z-index: 1050; width: 280px; max-width:calc(100% - 2rem); }
+  @media (max-width: 768px) {
+    .sticky-top-right { position: static; width:100%; margin-bottom: 1rem; }
+  }
+</style>
+{% endblock %}
+
 {% block content %}
-<h3>{{ quiz.title }}</h3>
-<p><small>{{ quiz.subject_name }} / {{ quiz.chapter_name }}</small></p>
+<div class="row">
+  <div class="col-lg-8">
+    <h3 class="mb-3">{{ quiz.title }}</h3>
+    <p class="text-muted mb-4">{{ quiz.subject_name }} / {{ quiz.chapter_name }}</p>
 
-{% if server_end_ts %}
-<div class="alert alert-info">
-  Time remaining: <span id="timer">calculating...</span>
-</div>
-{% endif %}
+    <form id="quizForm" method="post" novalidate>
+      <input type="hidden" id="current_q" name="current_q" value="1">
 
-<form id="quizForm" method="post">
-  {% for q in questions %}
-  <div class="card mb-3 p-3">
-    <p><strong>Q{{ loop.index }}.</strong> {{ q.question_text }}</p>
-    <div class="form-check">
-      <input class="form-check-input" type="radio" id="q{{ q.id }}a" name="question_{{ q.id }}" value="A">
-      <label class="form-check-label" for="q{{ q.id }}a">A. {{ q.option_a }}</label>
-    </div>
-    <div class="form-check">
-      <input class="form-check-input" type="radio" id="q{{ q.id }}b" name="question_{{ q.id }}" value="B">
-      <label class="form-check-label" for="q{{ q.id }}b">B. {{ q.option_b }}</label>
-    </div>
-    <div class="form-check">
-      <input class="form-check-input" type="radio" id="q{{ q.id }}c" name="question_{{ q.id }}" value="C">
-      <label class="form-check-label" for="q{{ q.id }}c">C. {{ q.option_c }}</label>
-    </div>
-    <div class="form-check">
-      <input class="form-check-input" type="radio" id="q{{ q.id }}d" name="question_{{ q.id }}" value="D">
-      <label class="form-check-label" for="q{{ q.id }}d">D. {{ q.option_d }}</label>
+      {% for q in questions %}
+      <div id="qcard-{{ q.id }}" class="card mb-3 question-card {% if loop.index==1 %}active{% endif %}" data-qindex="{{ loop.index }}" data-qid="{{ q.id }}" role="region" aria-labelledby="qtitle-{{ q.id }}">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <div>
+              <h6 id="qtitle-{{ q.id }}" class="mb-1"><strong>Q{{ loop.index }}.</strong> {{ q.question_text }}</h6>
+              <small class="text-muted">Question ID: {{ q.id }}</small>
+            </div>
+            <div class="text-end d-none d-md-block">
+              <small class="text-muted">Mark your best answer</small>
+            </div>
+          </div>
+
+          <div class="list-group">
+            <label class="list-group-item">
+              <input class="form-check-input me-2" type="radio" name="question_{{ q.id }}" value="A"> <span>A.</span> {{ q.option_a }}
+            </label>
+            <label class="list-group-item">
+              <input class="form-check-input me-2" type="radio" name="question_{{ q.id }}" value="B"> <span>B.</span> {{ q.option_b }}
+            </label>
+            <label class="list-group-item">
+              <input class="form-check-input me-2" type="radio" name="question_{{ q.id }}" value="C"> <span>C.</span> {{ q.option_c }}
+            </label>
+            <label class="list-group-item">
+              <input class="form-check-input me-2" type="radio" name="question_{{ q.id }}" value="D"> <span>D.</span> {{ q.option_d }}
+            </label>
+          </div>
+
+        </div>
+        <div class="card-footer d-flex justify-content-between align-items-center">
+          <small class="text-muted">Question {{ loop.index }} of {{ questions|length }}</small>
+          <div>
+            <button type="button" class="btn btn-sm btn-outline-secondary prev-btn">Prev</button>
+            <button type="button" class="btn btn-sm btn-primary next-btn">Next</button>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+
+      <div class="d-flex justify-content-between align-items-center mt-3">
+        <div class="d-flex gap-2 align-items-center flex-wrap" id="navNumbers">
+          <!-- JS will populate quick nav -->
+        </div>
+
+        <div>
+          <button type="button" id="previewBtn" class="btn btn-outline-secondary me-2">Review Answers</button>
+          <button type="button" id="submitBtn" class="btn btn-success">Submit Quiz</button>
+        </div>
+      </div>
+
+      <!-- submit confirmation modal -->
+      <div class="modal fade" id="confirmSubmit" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Submit Quiz</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              <p>Are you sure you want to submit? You will not be able to change your answers after submission.</p>
+              <p class="small text-muted" id="submitSummary"></p>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="button" id="confirmSubmitYes" class="btn btn-success">Yes, Submit</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </form>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="sticky-top-right">
+      <div class="card shadow-sm quiz-timer mb-3 p-3">
+        <div>
+          <h6 class="mb-1">Timer</h6>
+          <div class="h4 mb-0" id="timer">--:--:--</div>
+        </div>
+      </div>
+
+      <div class="card shadow-sm p-3 mb-3">
+        <h6 class="mb-2">Progress</h6>
+        <div class="progress mb-2" style="height:14px;">
+          <div id="progressBar" class="progress-bar" role="progressbar" style="width:0%">0%</div>
+        </div>
+        <div class="mb-2 small text-muted">Answered <span id="answeredCount">0</span> / {{ questions|length }}</div>
+        <div class="mb-2 small text-muted">Unanswered <span id="unansweredCount">{{ questions|length }}</span></div>
+        <hr>
+        <div class="small text-muted">Navigation</div>
+        <div class="mt-2 d-flex flex-wrap gap-2" id="navSmall">
+          <!-- quick nav numbers -->
+        </div>
+      </div>
+
+      <div class="card shadow-sm p-3">
+        <h6 class="mb-2">Instructions</h6>
+        <ul class="small mb-0">
+          <li>Answer each question by selecting one option.</li>
+          <li>The timer will auto-submit when time is up.</li>
+          <li>Use Review Answers to quickly check unanswered items.</li>
+        </ul>
+      </div>
     </div>
   </div>
-  {% endfor %}
+</div>
+{% endblock %}
 
-  <button class="btn btn-primary" type="submit">Submit Quiz</button>
-</form>
-
-{% if server_end_ts %}
+{% block scripts %}
 <script>
-const serverEnd = new Date("{{ server_end_ts }}");
-function updateTimer(){
-  const now = new Date();
-  const diff = serverEnd - now;
-  if(diff <= 0){
-    document.getElementById('timer').innerText = '00:00:00';
-    // auto-submit
-    document.getElementById('quizForm').submit();
-    return;
-  }
-  const sec = Math.floor(diff / 1000) % 60;
-  const min = Math.floor(diff / (1000*60)) % 60;
-  const hr = Math.floor(diff / (1000*60*60));
-  document.getElementById('timer').innerText = String(hr).padStart(2,'0') + ':' + String(min).padStart(2,'0') + ':' + String(sec).padStart(2,'0');
-}
-updateTimer();
-setInterval(updateTimer, 1000);
+  // Basic client-side quiz UX script
+  (function(){
+    const totalQs = {{ questions|length }};
+    const qCards = Array.from(document.querySelectorAll('.question-card'));
+    const navNumbers = document.getElementById('navNumbers');
+    const navSmall = document.getElementById('navSmall');
+    const answeredCountEl = document.getElementById('answeredCount');
+    const unansweredCountEl = document.getElementById('unansweredCount');
+    const progressBar = document.getElementById('progressBar');
+    const currentInput = document.getElementById('current_q');
+
+    // build nav buttons
+    qCards.forEach((card, idx) => {
+      const n = idx+1;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'nav-q';
+      btn.innerText = n;
+      btn.dataset.target = card.id;
+      btn.addEventListener('click', ()=> showCard(n));
+      navNumbers.appendChild(btn);
+
+      // small nav (right panel)
+      const sbtn = btn.cloneNode(true);
+      sbtn.addEventListener('click', ()=> showCard(n));
+      navSmall.appendChild(sbtn);
+    });
+
+    function showCard(n){
+      qCards.forEach((c,i)=> {
+        const is = (i+1)===n;
+        c.classList.toggle('active', is);
+        c.style.display = is ? 'block' : 'none';
+        // update nav classes
+        const navbtn = navNumbers.children[i];
+        navbtn.classList.toggle('current', is);
+      });
+      currentInput.value = n;
+      updateProgressUI();
+      // scroll to top so header/timer visible
+      window.scrollTo({top:0, behavior:'smooth'});
+    }
+
+    // init display: only show first card on small screens, keep all visible on desktop
+    function initDisplay(){
+      if(window.innerWidth < 900){
+        qCards.forEach((c,i)=> c.style.display = (i===0 ? 'block':'none'));
+      } else {
+        qCards.forEach(c=> c.style.display='block');
+      }
+      updateProgressUI();
+    }
+
+    // next / prev handlers
+    document.querySelectorAll('.next-btn').forEach(b => b.addEventListener('click', ()=>{
+      const cur = Number(currentInput.value);
+      if(cur < totalQs) showCard(cur+1);
+    }));
+    document.querySelectorAll('.prev-btn').forEach(b => b.addEventListener('click', ()=>{
+      const cur = Number(currentInput.value);
+      if(cur > 1) showCard(cur-1);
+    }));
+
+    // update progress UI
+    function updateProgressUI(){
+      let answered = 0;
+      qCards.forEach((c, i) => {
+        const qid = c.dataset.qid;
+        const checked = document.querySelector('input[name="question_' + qid + '"]:checked');
+        const navbtn = navNumbers.children[i];
+        if(checked){
+          answered++;
+          navbtn.classList.add('done');
+          navSmall.children[i].classList.add('done');
+        } else {
+          navbtn.classList.remove('done');
+          navSmall.children[i].classList.remove('done');
+        }
+      });
+      answeredCountEl.innerText = answered;
+      unansweredCountEl.innerText = totalQs - answered;
+      const pct = Math.round((answered / totalQs) * 100);
+      progressBar.style.width = pct + '%';
+      progressBar.innerText = pct + '%';
+    }
+
+    // listen for option changes
+    document.querySelectorAll('input[type=radio]').forEach(r => r.addEventListener('change', updateProgressUI));
+
+    // Review answers button opens a quick modal-like list (very small)
+    document.getElementById('previewBtn').addEventListener('click', ()=>{
+      const unanswered = [];
+      qCards.forEach((c,i) => {
+        const qid = c.dataset.qid;
+        const checked = document.querySelector('input[name="question_' + qid + '"]:checked');
+        if(!checked) unanswered.push(i+1);
+      });
+      if(unanswered.length){
+        alert('Unanswered questions: ' + unanswered.join(', '));
+        showCard(unanswered[0]);
+      } else {
+        alert('All questions answered. Good job!');
+        showCard(1);
+      }
+    });
+
+    // Submit confirmation
+    const submitBtn = document.getElementById('submitBtn');
+    const confirmModal = new bootstrap.Modal(document.getElementById('confirmSubmit'));
+    const confirmYes = document.getElementById('confirmSubmitYes');
+    const submitSummary = document.getElementById('submitSummary');
+
+    submitBtn.addEventListener('click', ()=>{
+      // build summary
+      const answered = Number(answeredCountEl.innerText);
+      submitSummary.innerText = `You have answered ${answered} out of ${totalQs} questions.`;
+      confirmModal.show();
+    });
+
+    confirmYes.addEventListener('click', ()=>{
+      // actually submit the form
+      document.getElementById('quizForm').submit();
+    });
+
+    // Auto-submit when timer runs out: server already will enforce — this just shows immediate behavior
+    {% if server_end_ts %}
+    const serverEnd = new Date("{{ server_end_ts }}");
+    function updateTimer(){
+      const now = new Date();
+      const diff = serverEnd - now;
+      const timerEl = document.getElementById('timer');
+      if(diff <= 0){
+        timerEl.innerText = '00:00:00';
+        // auto-submit
+        document.getElementById('quizForm').submit();
+        return;
+      }
+      const sec = Math.floor(diff/1000) % 60;
+      const min = Math.floor(diff/(1000*60)) % 60;
+      const hr = Math.floor(diff/(1000*60*60));
+      timerEl.innerText = String(hr).padStart(2,'0') + ':' + String(min).padStart(2,'0') + ':' + String(sec).padStart(2,'0');
+    }
+    updateTimer(); setInterval(updateTimer, 1000);
+    {% else %}
+    document.getElementById('timer').innerText = '—';
+    {% endif %}
+
+    // initialize
+    initDisplay();
+    // handle resize
+    window.addEventListener('resize', initDisplay);
+
+    // prevent accidental back navigation (mild)
+    history.pushState(null, null, location.href);
+    window.addEventListener('popstate', function (event) {
+      history.pushState(null, null, location.href);
+      if(confirm('Going back will leave this quiz. Are you sure?')) {
+        // allow default action (navigate back)
+        history.back();
+      }
+    });
+
+  })();
 </script>
-{% endif %}
 {% endblock %}
