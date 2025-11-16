@@ -1,0 +1,10 @@
+{% extends 'layout.html' %}
+{% block content %}
+<h3>{{ action }} Subject</h3>
+<form method="post">
+  <div class="mb-3"><label>Name</label><input class="form-control" name="name" value="{{ subject.name if subject else '' }}" required></div>
+  <div class="mb-3"><label>Description</label><textarea class="form-control" name="description">{{ subject.description if subject else '' }}</textarea></div>
+  <button class="btn btn-success">{{ action }}</button>
+  <a class="btn btn-secondary" href="{{ url_for('admin_subjects') }}">Cancel</a>
+</form>
+{% endblock %}

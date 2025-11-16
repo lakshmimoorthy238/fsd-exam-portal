@@ -1,0 +1,26 @@
+{% extends 'layout.html' %}
+{% block content %}
+<h3>Result — {{ quiz.title }}</h3>
+<p>Your score: <strong>{{ score }}</strong> out of <strong>{{ total }}</strong> ({{ percent }}%)</p>
+
+<h4>Feedback</h4>
+<ul class="list-group">
+  {% for f in feedback %}
+    <li class="list-group-item">
+      <p><strong>Q:</strong> {{ f.question_text }}</p>
+      <p>
+        <strong>Selected:</strong> {{ f.selected or 'No answer' }} — {{ f.options.get(f.selected) if f.selected else '' }}<br>
+        <strong>Correct:</strong> {{ f.correct }} — {{ f.options[f.correct] }}<br>
+        {% if f.is_correct %}
+          <span class="badge bg-success">Correct</span>
+        {% else %}
+          <span class="badge bg-danger">Incorrect</span>
+        {% endif %}
+      </p>
+    </li>
+  {% endfor %}
+</ul>
+
+<a class="btn btn-secondary mt-3" href="{{ url_for('list_quizzes') }}">Back to quizzes</a>
+<a class="btn btn-primary mt-3" href="{{ url_for('my_attempts') }}">My Attempts</a>
+{% endblock %}

@@ -1,0 +1,63 @@
+{% extends 'layout.html' %}
+{% block content %}
+<h3>My Performance</h3>
+
+<div class="row">
+  <div class="col-md-8">
+    <div class="card mb-3 p-3">
+      <h5>Scores over time</h5>
+      <canvas id="timelineChart" height="120"></canvas>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="card mb-3 p-3">
+      <h5>Best score per quiz</h5>
+      <canvas id="bestQuizChart" height="200"></canvas>
+    </div>
+    <a class="btn btn-secondary mt-2" href="{{ url_for('my_attempts') }}">View attempts</a>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const timelineLabels = {{ timeline_labels | safe }};
+const timelineVals = {{ timeline_vals | safe }};
+const bpqLabels = {{ bpq_labels | safe }};
+const bpqVals = {{ bpq_vals | safe }};
+
+// timeline line chart
+new Chart(document.getElementById('timelineChart'), {
+  type: 'line',
+  data: {
+    labels: timelineLabels,
+    datasets: [{
+      label: 'Score (%)',
+      data: timelineVals,
+      fill: false,
+      tension: 0.2,
+      pointRadius: 4
+    }]
+  },
+  options: {
+    scales: { y: { beginAtZero: true, max: 100 } }
+  }
+});
+
+// best per quiz bar chart
+new Chart(document.getElementById('bestQuizChart'), {
+  type: 'bar',
+  data: {
+    labels: bpqLabels,
+    datasets: [{
+      label: 'Best score (%)',
+      data: bpqVals
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    scales: { x: { beginAtZero: true, max: 100 } }
+  }
+});
+</script>
+{% endblock %}

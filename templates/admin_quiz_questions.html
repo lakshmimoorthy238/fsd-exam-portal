@@ -1,0 +1,22 @@
+{% extends 'layout.html' %}
+{% block content %}
+<h3>Questions for: {{ quiz.title }} <a class="btn btn-sm btn-success float-end" href="{{ url_for('admin_add_question', quiz_id=quiz.id) }}">Add Question</a></h3>
+<ul class="list-group">
+  {% for q in questions %}
+  <li class="list-group-item d-flex justify-content-between align-items-center">
+    <div>
+      <strong>{{ loop.index }}.</strong> {{ q.question_text }}<br>
+      <small>A: {{ q.option_a }} | B: {{ q.option_b }} | C: {{ q.option_c }} | D: {{ q.option_d }}</small>
+    </div>
+    <div>
+      <a class="btn btn-sm btn-primary" href="{{ url_for('admin_edit_question', question_id=q.id) }}">Edit</a>
+      <form method="post" action="{{ url_for('admin_delete_question', question_id=q.id) }}" style="display:inline" onsubmit="return confirm('Delete question?')">
+        <button class="btn btn-sm btn-danger">Delete</button>
+      </form>
+    </div>
+  </li>
+  {% else %}
+    <li class="list-group-item">No questions yet</li>
+  {% endfor %}
+</ul>
+{% endblock %}

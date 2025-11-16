@@ -1,0 +1,23 @@
+{% extends 'layout.html' %}
+{% block content %}
+<h3>Quizzes <a class="btn btn-sm btn-success float-end" href="{{ url_for('admin_add_quiz') }}">Add Quiz</a></h3>
+<ul class="list-group">
+  {% for q in quizzes %}
+  <li class="list-group-item d-flex justify-content-between align-items-center">
+    <div>
+      <strong>{{ q.title }}</strong><br>
+      <small>{{ q.subject_name }} / {{ q.chapter_name }} — {{ q.description or '' }}</small>
+    </div>
+    <div>
+      <a class="btn btn-sm btn-success" href="{{ url_for('admin_quiz_questions', quiz_id=q.id) }}">Questions</a>
+      <a class="btn btn-sm btn-primary" href="{{ url_for('admin_edit_quiz', quiz_id=q.id) }}">Edit</a>
+      <form method="post" action="{{ url_for('admin_delete_quiz', quiz_id=q.id) }}" style="display:inline" onsubmit="return confirm('Delete quiz?')">
+        <button class="btn btn-sm btn-danger">Delete</button>
+      </form>
+    </div>
+  </li>
+  {% else %}
+    <li class="list-group-item">No quizzes yet</li>
+  {% endfor %}
+</ul>
+{% endblock %}

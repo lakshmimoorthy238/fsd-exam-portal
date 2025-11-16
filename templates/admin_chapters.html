@@ -1,0 +1,22 @@
+{% extends 'layout.html' %}
+{% block content %}
+<h3>Chapters <a class="btn btn-sm btn-success float-end" href="{{ url_for('admin_add_chapter') }}">Add Chapter</a></h3>
+<ul class="list-group">
+  {% for c in chapters %}
+  <li class="list-group-item d-flex justify-content-between align-items-center">
+    <div>
+      <strong>{{ c.name }}</strong> <small class="text-muted">({{ c.subject_name }})</small><br>
+      <small>{{ c.description or '' }}</small>
+    </div>
+    <div>
+      <a class="btn btn-sm btn-primary" href="{{ url_for('admin_edit_chapter', chapter_id=c.id) }}">Edit</a>
+      <form method="post" action="{{ url_for('admin_delete_chapter', chapter_id=c.id) }}" style="display:inline" onsubmit="return confirm('Delete chapter?')">
+        <button class="btn btn-sm btn-danger">Delete</button>
+      </form>
+    </div>
+  </li>
+  {% else %}
+    <li class="list-group-item">No chapters yet</li>
+  {% endfor %}
+</ul>
+{% endblock %}

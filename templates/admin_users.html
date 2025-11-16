@@ -1,0 +1,22 @@
+{% extends 'layout.html' %}
+{% block content %}
+<h3>Users</h3>
+<table class="table table-striped">
+  <thead><tr><th>Email</th><th>Name</th><th>Qualification</th><th>DOB</th><th>Role</th><th>Created</th></tr></thead>
+  <tbody>
+  {% for u in users %}
+    <tr>
+      <td>{{ u.email }}</td>
+      <td>{{ u.full_name or '' }}</td>
+      <td>{{ u.qualification or '' }}</td>
+      <td>{{ u.dob or '' }}</td>
+      <td>{{ u.role }}</td>
+      <td>{{ u.created_on }}</td>
+    </tr>
+  {% else %}
+    <tr><td colspan="6">No users</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
+

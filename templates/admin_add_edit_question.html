@@ -1,0 +1,22 @@
+{% extends 'layout.html' %}
+{% block content %}
+<h3>{{ action }} Question for {{ quiz.title if quiz else '' }}</h3>
+<form method="post">
+  <div class="mb-3"><label>Question</label><textarea class="form-control" name="question_text">{{ q.question_text if q else '' }}</textarea></div>
+  <div class="mb-3"><label>Option A</label><input class="form-control" name="option_a" value="{{ q.option_a if q else '' }}" required></div>
+  <div class="mb-3"><label>Option B</label><input class="form-control" name="option_b" value="{{ q.option_b if q else '' }}" required></div>
+  <div class="mb-3"><label>Option C</label><input class="form-control" name="option_c" value="{{ q.option_c if q else '' }}" required></div>
+  <div class="mb-3"><label>Option D</label><input class="form-control" name="option_d" value="{{ q.option_d if q else '' }}" required></div>
+  <div class="mb-3">
+    <label>Correct Option</label>
+    <select class="form-control" name="correct_option" required>
+      <option value="A" {% if q and q.correct_option=='A' %}selected{% endif %}>A</option>
+      <option value="B" {% if q and q.correct_option=='B' %}selected{% endif %}>B</option>
+      <option value="C" {% if q and q.correct_option=='C' %}selected{% endif %}>C</option>
+      <option value="D" {% if q and q.correct_option=='D' %}selected{% endif %}>D</option>
+    </select>
+  </div>
+  <button class="btn btn-success">{{ action }}</button>
+  <a class="btn btn-secondary" href="{{ url_for('admin_quiz_questions', quiz_id=quiz.id if quiz else q.quiz_id) }}">Cancel</a>
+</form>
+{% endblock %}

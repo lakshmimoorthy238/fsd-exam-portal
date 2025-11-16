@@ -1,0 +1,59 @@
+{% extends 'layout.html' %}
+{% block content %}
+<h3>{{ quiz.title }}</h3>
+<p><small>{{ quiz.subject_name }} / {{ quiz.chapter_name }}</small></p>
+
+{% if server_end_ts %}
+<div class="alert alert-info">
+  Time remaining: <span id="timer">calculating...</span>
+</div>
+{% endif %}
+
+<form id="quizForm" method="post">
+  {% for q in questions %}
+  <div class="card mb-3 p-3">
+    <p><strong>Q{{ loop.index }}.</strong> {{ q.question_text }}</p>
+    <div class="form-check">
+      <input class="form-check-input" type="radio" id="q{{ q.id }}a" name="question_{{ q.id }}" value="A">
+      <label class="form-check-label" for="q{{ q.id }}a">A. {{ q.option_a }}</label>
+    </div>
+    <div class="form-check">
+      <input class="form-check-input" type="radio" id="q{{ q.id }}b" name="question_{{ q.id }}" value="B">
+      <label class="form-check-label" for="q{{ q.id }}b">B. {{ q.option_b }}</label>
+    </div>
+    <div class="form-check">
+      <input class="form-check-input" type="radio" id="q{{ q.id }}c" name="question_{{ q.id }}" value="C">
+      <label class="form-check-label" for="q{{ q.id }}c">C. {{ q.option_c }}</label>
+    </div>
+    <div class="form-check">
+      <input class="form-check-input" type="radio" id="q{{ q.id }}d" name="question_{{ q.id }}" value="D">
+      <label class="form-check-label" for="q{{ q.id }}d">D. {{ q.option_d }}</label>
+    </div>
+  </div>
+  {% endfor %}
+
+  <button class="btn btn-primary" type="submit">Submit Quiz</button>
+</form>
+
+{% if server_end_ts %}
+<script>
+const serverEnd = new Date("{{ server_end_ts }}");
+function updateTimer(){
+  const now = new Date();
+  const diff = serverEnd - now;
+  if(diff <= 0){
+    document.getElementById('timer').innerText = '00:00:00';
+    // auto-submit
+    document.getElementById('quizForm').submit();
+    return;
+  }
+  const sec = Math.floor(diff / 1000) % 60;
+  const min = Math.floor(diff / (1000*60)) % 60;
+  const hr = Math.floor(diff / (1000*60*60));
+  document.getElementById('timer').innerText = String(hr).padStart(2,'0') + ':' + String(min).padStart(2,'0') + ':' + String(sec).padStart(2,'0');
+}
+updateTimer();
+setInterval(updateTimer, 1000);
+</script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,87 @@
+{% extends 'layout.html' %}
+{% block content %}
+<h3>Admin Summary</h3>
+
+<div class="mb-3">
+  <a class="btn btn-primary me-2" href="{{ url_for('admin_subjects') }}">Manage Subjects</a>
+  <a class="btn btn-primary me-2" href="{{ url_for('admin_quizzes') }}">Manage Quizzes</a>
+  <a class="btn btn-secondary" href="{{ url_for('admin_users') }}">Users</a>
+</div>
+
+<div class="row">
+  <div class="col-md-7">
+    <div class="card mb-3 p-3">
+      <h5>Average score per quiz</h5>
+      <canvas id="avgQuizChart" height="120"></canvas>
+    </div>
+  </div>
+
+  <div class="col-md-5">
+    <div class="card mb-3 p-3">
+      <h5>Users by role</h5>
+      <canvas id="rolePieChart" height="200"></canvas>
+    </div>
+  </div>
+</div>
+
+<div class="card mt-3 p-3">
+  <h5>Top users (by avg %)</h5>
+  <table class="table">
+    <thead><tr><th>User</th><th>Email</th><th>Avg %</th><th>Attempts</th></tr></thead>
+    <tbody>
+      {% for u in top_users %}
+        <tr>
+          <td>{{ u.full_name or '-' }}</td>
+          <td>{{ u.email }}</td>
+          <td>{{ (u.avg_percent or 0) | round(2) }}</td>
+          <td>{{ u.attempts }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="4">No attempts yet</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const quizLabels = {{ quiz_labels | safe }};
+const quizAvgs = {{ quiz_avgs | safe }};
+const quizAttempts = {{ quiz_attempts | safe }};
+const roles = {{ roles | safe }};
+const roleCounts = {{ role_counts | safe }};
+
+// avg per quiz bar
+new Chart(document.getElementById('avgQuizChart'), {
+  type: 'bar',
+  data: {
+    labels: quizLabels,
+    datasets: [{
+      label: 'Avg (%)',
+      data: quizAvgs
+    },{
+      label: 'Attempts',
+      data: quizAttempts,
+      type: 'line',
+      yAxisID: 'y1',
+      borderDash: [5,5]
+    }]
+  },
+  options: {
+    scales: {
+      y: { beginAtZero: true, max:100 },
+      y1: { position: 'right', beginAtZero: true }
+    }
+  }
+});
+
+// roles pie chart
+new Chart(document.getElementById('rolePieChart'), {
+  type: 'pie',
+  data: {
+    labels: roles,
+    datasets: [{ data: roleCounts }]
+  }
+});
+</script>
+{% endblock %}

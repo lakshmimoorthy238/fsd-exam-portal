@@ -1,0 +1,13 @@
+{% extends 'layout.html' %}
+{% block content %}
+<h3>{{ subject.name }}</h3>
+<p>{{ subject.description or '' }}</p>
+<h5>Chapters</h5>
+<ul class="list-group">
+  {% for c in chapters %}
+    <li class="list-group-item">{{ c.name }}</li>
+  {% else %}
+    <li class="list-group-item">No chapters yet.</li>
+  {% endfor %}
+</ul>
+{% endblock %}

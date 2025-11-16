@@ -1,0 +1,20 @@
+{% extends 'layout.html' %}
+{% block content %}
+<h3>My Attempts</h3>
+<table class="table">
+  <thead><tr><th>Date</th><th>Quiz</th><th>Subject/Chapter</th><th>Score</th><th>Percent</th></tr></thead>
+  <tbody>
+    {% for r in rows %}
+    <tr>
+      <td>{{ r.taken_on }}</td>
+      <td>{{ r.quiz_title }}</td>
+      <td>{{ r.subject_name }} / {{ r.chapter_name }}</td>
+      <td>{{ r.score }} / {{ r.total }}</td>
+      <td>{{ ((r.score / r.total) * 100) | round(2) }}%</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="5">No attempts yet.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

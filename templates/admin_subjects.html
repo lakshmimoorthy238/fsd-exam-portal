@@ -1,0 +1,21 @@
+{% extends 'layout.html' %}
+{% block content %}
+<h3>Subjects <a class="btn btn-sm btn-success float-end" href="{{ url_for('admin_add_subject') }}">Add Subject</a></h3>
+<ul class="list-group">
+  {% for s in subjects %}
+  <li class="list-group-item d-flex justify-content-between align-items-center">
+    <div>
+      <strong>{{ s.name }}</strong><br><small>{{ s.description or '' }}</small>
+    </div>
+    <div>
+      <a class="btn btn-sm btn-primary" href="{{ url_for('admin_edit_subject', subject_id=s.id) }}">Edit</a>
+      <form method="post" action="{{ url_for('admin_delete_subject', subject_id=s.id) }}" style="display:inline" onsubmit="return confirm('Delete subject?')">
+        <button class="btn btn-sm btn-danger">Delete</button>
+      </form>
+    </div>
+  </li>
+  {% else %}
+    <li class="list-group-item">No subjects yet</li>
+  {% endfor %}
+</ul>
+{% endblock %}

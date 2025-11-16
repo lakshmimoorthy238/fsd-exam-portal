@@ -1,0 +1,23 @@
+{% extends 'layout.html' %}
+{% block content %}
+<h3>Available Subjects</h3>
+<div class="mb-3">
+  <a class="btn btn-sm btn-primary" href="{{ url_for('list_quizzes') }}">All Quizzes</a>
+  <a class="btn btn-sm btn-secondary" href="{{ url_for('my_attempts') }}">My Attempts</a>
+</div>
+
+<ul class="list-group">
+  {% for s in subjects %}
+    <li class="list-group-item d-flex justify-content-between align-items-center">
+      <div>
+        <strong>{{ s.name }}</strong><br><small>{{ s.description or '' }}</small>
+      </div>
+      <div>
+        <a class="btn btn-sm btn-outline-primary" href="{{ url_for('quizzes_by_subject', subject_id=s.id) }}">View Quizzes</a>
+      </div>
+    </li>
+  {% else %}
+    <li class="list-group-item">No subjects yet.</li>
+  {% endfor %}
+</ul>
+{% endblock %}

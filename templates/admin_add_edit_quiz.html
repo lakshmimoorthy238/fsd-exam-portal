@@ -1,0 +1,20 @@
+{% extends 'layout.html' %}
+{% block content %}
+<h3>{{ action }} Quiz</h3>
+<form method="post">
+  <div class="mb-3">
+    <label>Chapter</label>
+    <select class="form-control" name="chapter_id" required>
+      {% for ch in chapters %}
+        <option value="{{ ch.id }}">{{ ch.subject_name }} / {{ ch.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="mb-3"><label>Title</label><input class="form-control" name="title" value="{{ quiz.title if quiz else '' }}" required></div>
+  <div class="mb-3"><label>Description</label><textarea class="form-control" name="description">{{ quiz.description if quiz else '' }}</textarea></div>
+  <div class="mb-3"><label>Start (optional)</label><input type="datetime-local" class="form-control" name="start_datetime" value="{{ quiz.start_datetime if quiz and quiz.start_datetime else '' }}"></div>
+  <div class="mb-3"><label>Duration (minutes)</label><input type="number" class="form-control" name="duration_minutes" value="{{ quiz.duration_minutes if quiz else 0 }}"></div>
+  <button class="btn btn-success">{{ action }}</button>
+  <a class="btn btn-secondary" href="{{ url_for('admin_quizzes') }}">Cancel</a>
+</form>
+{% endblock %}

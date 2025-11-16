@@ -1,0 +1,18 @@
+{% extends 'layout.html' %}
+{% block content %}
+<h3>{{ action }} Chapter</h3>
+<form method="post">
+  <div class="mb-3">
+    <label>Subject</label>
+    <select class="form-control" name="subject_id" required>
+      {% for s in subjects %}
+        <option value="{{ s.id }}" {% if chapter and chapter.subject_id==s.id %}selected{% endif %}>{{ s.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="mb-3"><label>Name</label><input class="form-control" name="name" value="{{ chapter.name if chapter else '' }}" required></div>
+  <div class="mb-3"><label>Description</label><textarea class="form-control" name="description">{{ chapter.description if chapter else '' }}</textarea></div>
+  <button class="btn btn-success">{{ action }}</button>
+  <a class="btn btn-secondary" href="{{ url_for('admin_chapters') }}">Cancel</a>
+</form>
+{% endblock %}

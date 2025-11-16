@@ -1,0 +1,9 @@
+{% extends 'layout.html' %}
+{% block content %}
+<h3>Add Subject</h3>
+<form method="post">
+  <div class="mb-3"><label>Name</label><input class="form-control" name="name" required></div>
+  <div class="mb-3"><label>Description</label><textarea class="form-control" name="description"></textarea></div>
+  <button class="btn btn-success">Add</button>
+</form>
+{% endblock %}

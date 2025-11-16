@@ -1,0 +1,35 @@
+{% extends 'layout.html' %}
+{% block content %}
+<h3>Admin Dashboard</h3>
+
+<p>
+  Users: <strong>{{ user_count }}</strong> — Quizzes: <strong>{{ quiz_count }}</strong>
+</p>
+
+<!-- NAVIGATION BUTTONS FOR ADMIN -->
+<div class="mb-4">
+  <a class="btn btn-primary me-2" href="{{ url_for('admin_subjects') }}">Manage Subjects</a>
+  <a class="btn btn-primary me-2" href="{{ url_for('admin_chapters') }}">Manage Chapters</a>
+  <a class="btn btn-primary me-2" href="{{ url_for('admin_quizzes') }}">Manage Quizzes</a>
+  <a class="btn btn-secondary" href="{{ url_for('admin_users') }}">View Users</a>
+</div>
+
+<h5>Subjects</h5>
+<ul class="list-group">
+  {% for s in subjects %}
+    <li class="list-group-item d-flex justify-content-between align-items-center">
+      <div>
+        <strong>{{ s.name }}</strong><br><small>{{ s.description or '' }}</small>
+      </div>
+      <div>
+        <a class="btn btn-sm btn-outline-primary" href="{{ url_for('admin_edit_subject', subject_id=s.id) }}">Edit</a>
+        <form method="post" action="{{ url_for('admin_delete_subject', subject_id=s.id) }}" style="display:inline" onsubmit="return confirm('Delete subject?')">
+          <button class="btn btn-sm btn-outline-danger">Delete</button>
+        </form>
+      </div>
+    </li>
+  {% else %}
+    <li class="list-group-item">No subjects yet.</li>
+  {% endfor %}
+</ul>
+{% endblock %}
