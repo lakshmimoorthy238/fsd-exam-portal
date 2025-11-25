@@ -586,79 +586,112 @@ def quizzes_by_subject(subject_id):
 
 from datetime import datetime, timedelta
 
+from datetime import datetime, timedelta
+import sqlite3
+
 @app.route('/quiz/<int:quiz_id>', methods=['GET', 'POST'])
 @login_required
 def take_quiz(quiz_id):
-    # load quiz row (likely returns sqlite3.Row)
+    # --- load quiz ---
     quiz_row = query_db('SELECT * FROM quizzes WHERE id = ?', (quiz_id,), one=True)
     if not quiz_row:
         flash('Quiz not found.', 'danger')
         return redirect(url_for('list_quizzes'))
 
-    # convert to plain dict so we can safely use .get() and modify fields
+    # ensure mutable dict for quiz
     try:
         quiz = dict(quiz_row)
     except Exception:
-        # fallback: if it's already a dict, keep it
         quiz = quiz_row
 
-    # server-side availability check (non-blocking by default)
+    # --- optional availability check (kept non-blocking by default) ---
     now = datetime.now()
     GRACE_SECONDS = 60
-    start_raw = quiz.get('start_datetime')  # safe now because quiz is dict
+    start_raw = quiz.get('start_datetime')
     duration = quiz.get('duration_minutes') or 0
-    can_start = True   # default allow; change to False if you want to block
-
-    # If you want to enforce availability, set can_start False then compute:
-    # can_start = False
+    can_start = True
     if start_raw:
-        start_dt = None
         try:
             start_dt = datetime.fromisoformat(start_raw)
         except Exception:
             try:
                 start_dt = datetime.strptime(start_raw, '%Y-%m-%dT%H:%M')
             except Exception:
-                app.logger.debug("Cannot parse start_datetime for quiz %s: %s", quiz.get('id'), start_raw)
                 start_dt = None
-
         if start_dt:
             try:
                 end_dt = start_dt + timedelta(minutes=int(duration))
             except Exception:
                 end_dt = start_dt
-
-            # determine whether quiz is active (with small grace)
             if start_dt <= now <= (end_dt + timedelta(seconds=GRACE_SECONDS)):
                 can_start = True
             else:
-                # If you want to *allow* starting at any time, keep can_start True.
-                # If you want to *block* non-active times, uncomment next line:
-                # can_start = False
-                pass
+                # keep True to allow starting anytime; set False to block
+                can_start = True
 
     if not can_start:
         flash('Quiz is not currently available (scheduled or ended).', 'warning')
         return redirect(url_for('list_quizzes'))
 
-    # fetch questions for the quiz (convert rows to dicts if needed)
+    # --- load questions for the quiz ---
     qrows = query_db('SELECT * FROM questions WHERE quiz_id = ? ORDER BY id', (quiz_id,))
     questions = [dict(q) for q in qrows] if qrows else []
 
-    # If POST: evaluate answers (preserve your existing logic for scoring)
+    # --- POST: grade, save score, redirect to result ---
     if request.method == 'POST':
-        # keep your existing POST handling here — example skeleton:
-        answers = {}
-        for q in questions:
-            a = request.form.get(str(q['id']))
-            answers[q['id']] = a
-        # TODO: grade answers, save score into scores table, redirect to result
-        # (If you already have POST logic, merge it here.)
-        flash('Submitted — grading not implemented in this replacement.', 'info')
-        return redirect(url_for('list_quizzes'))
+        # make sure user logged in
+        user_id = session.get('user_id')
+        if not user_id:
+            flash('Please log in to submit the quiz.', 'warning')
+            return redirect(url_for('login'))
 
-    # GET: render quiz page
-    # Pass server_end_ts only if start exists and parsed ok (so client timer can use it)
+        total = len(questions)
+        correct_count = 0
+
+        for q in questions:
+            qid = str(q['id'])
+
+            # support either naming scheme:
+            # 1) name="{{ q.id }}"  OR  2) name="question_{{ q.id }}"
+            user_ans = request.form.get(qid)
+            if user_ans is None:
+                user_ans = request.form.get(f'question_{qid}')
+
+            # find the correct answer column (try a few common names)
+            correct = None
+            for key in ('correct_option','correct_answer','answer','correct','key'):
+                if key in q and q.get(key) not in (None, ''):
+                    correct = q.get(key)
+                    break
+
+            # compare as strings (strip whitespace). If correct is None, treat as wrong.
+            try:
+                if user_ans is not None and correct is not None and str(user_ans).strip() == str(correct).strip():
+                    correct_count += 1
+            except Exception:
+                # be defensive: don't crash on weird types
+                app.logger.debug("Compare failed for qid %s: user=%r correct=%r", qid, user_ans, correct)
+
+        # save score into DB
+        try:
+            con = sqlite3.connect('exam_prep.db')
+            cur = con.cursor()
+            cur.execute('''
+                INSERT INTO scores (user_id, quiz_id, score, total, taken_on)
+                VALUES (?, ?, ?, ?, ?)
+            ''', (user_id, quiz['id'], correct_count, total, datetime.now().isoformat()))
+            con.commit()
+            score_id = cur.lastrowid
+            con.close()
+        except Exception as e:
+            app.logger.exception("Failed to save quiz score: %s", e)
+            flash('Failed to save your score. Please try again.', 'danger')
+            return redirect(url_for('list_quizzes'))
+
+        # redirect to result page (make sure you have quiz_result route/template)
+        return redirect(url_for('quiz_result', score_id=score_id))
+
+    # --- GET: render page with quiz and questions ---
     server_end_ts = None
     if start_raw and 'end_dt' in locals():
         server_end_ts = end_dt.isoformat()
@@ -981,6 +1014,35 @@ def debug_quizzes_json():
     # convert sqlite row objects to JSON-serializable (default=str for dates)
     return json.dumps(rows, indent=4, default=str)
 
+@app.route('/quiz/result/<int:score_id>')
+@login_required
+def quiz_result(score_id):
+    import sqlite3
+    con = sqlite3.connect('exam_prep.db')
+    con.row_factory = sqlite3.Row
+    cur = con.cursor()
+
+    cur.execute('''
+        SELECT s.*, 
+               q.title AS quiz_title,
+               ch.name AS chapter_name,
+               sub.name AS subject_name
+        FROM scores s
+        LEFT JOIN quizzes q ON s.quiz_id = q.id
+        LEFT JOIN chapters ch ON q.chapter_id = ch.id
+        LEFT JOIN subjects sub ON ch.subject_id = sub.id
+        WHERE s.id = ?
+    ''', (score_id,))
+
+    row = cur.fetchone()
+    con.close()
+
+    if not row:
+        flash("Result not found.", "danger")
+        return redirect(url_for('list_quizzes'))
+
+    result = dict(row)
+    return render_template("quiz_result.html", result=result)
 
 
 

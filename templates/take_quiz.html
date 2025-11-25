@@ -57,17 +57,25 @@
 
           <div class="list-group">
             <label class="list-group-item">
-              <input class="form-check-input me-2" type="radio" name="question_{{ q.id }}" value="A"> <span>A.</span> {{ q.option_a }}
-            </label>
-            <label class="list-group-item">
-              <input class="form-check-input me-2" type="radio" name="question_{{ q.id }}" value="B"> <span>B.</span> {{ q.option_b }}
-            </label>
-            <label class="list-group-item">
-              <input class="form-check-input me-2" type="radio" name="question_{{ q.id }}" value="C"> <span>C.</span> {{ q.option_c }}
-            </label>
-            <label class="list-group-item">
-              <input class="form-check-input me-2" type="radio" name="question_{{ q.id }}" value="D"> <span>D.</span> {{ q.option_d }}
-            </label>
+  <input class="form-check-input me-2" type="radio" name="{{ q.id }}" value="A"> 
+  <span>A.</span> {{ q.option_a }}
+</label>
+
+<label class="list-group-item">
+  <input class="form-check-input me-2" type="radio" name="{{ q.id }}" value="B"> 
+  <span>B.</span> {{ q.option_b }}
+</label>
+
+<label class="list-group-item">
+  <input class="form-check-input me-2" type="radio" name="{{ q.id }}" value="C"> 
+  <span>C.</span> {{ q.option_c }}
+</label>
+
+<label class="list-group-item">
+  <input class="form-check-input me-2" type="radio" name="{{ q.id }}" value="D"> 
+  <span>D.</span> {{ q.option_d }}
+</label>
+
           </div>
 
         </div>
@@ -318,3 +326,55 @@
   })();
 </script>
 {% endblock %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const submitBtn = document.getElementById('submitBtn');
+  const confirmYes = document.getElementById('confirmSubmitYes');
+  const quizForm = document.getElementById('quizForm');
+
+  // Show Bootstrap modal when user clicks Submit (Bootstrap must be loaded)
+  if (submitBtn) {
+    submitBtn.addEventListener('click', () => {
+      const modalEl = document.getElementById('confirmSubmit');
+      const bsModal = new bootstrap.Modal(modalEl);
+      // optional: compute and show quick summary in #submitSummary
+      const answers = quizForm.querySelectorAll('input[type="radio"]:checked');
+      document.getElementById('submitSummary').textContent =
+        `You have answered ${answers.length} of ${quizForm.querySelectorAll('.question-card').length} questions.`;
+      bsModal.show();
+    });
+  }
+
+  if (confirmYes) {
+    confirmYes.addEventListener('click', () => {
+      // actually submit the form (this triggers POST)
+      quizForm.submit();
+    });
+  }
+
+  // optional Prev/Next handlers already present? if not, add minimal navigation
+  document.querySelectorAll('.next-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const card = btn.closest('.question-card');
+      const next = card.nextElementSibling;
+      if (next && next.classList.contains('question-card')) {
+        card.classList.remove('active');
+        next.classList.add('active');
+        document.getElementById('current_q').value = next.dataset.qindex;
+      }
+    });
+  });
+  document.querySelectorAll('.prev-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const card = btn.closest('.question-card');
+      const prev = card.previousElementSibling;
+      if (prev && prev.classList.contains('question-card')) {
+        card.classList.remove('active');
+        prev.classList.add('active');
+        document.getElementById('current_q').value = prev.dataset.qindex;
+      }
+    });
+  });
+});
+</script>
