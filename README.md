@@ -70,8 +70,6 @@ FSD Project/
 ├── templates/ # HTML templates (Jinja2)
 ├── static/ # CSS and JavaScript files
 └── venv/ # Virtual environment
-
-
 ---
 
 ## Admin Credentials
