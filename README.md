@@ -57,19 +57,31 @@ The objective of this project is to design and develop a full-stack web applicat
 
 ---
 
-## Project Structure
+##  Project Structure
 
 FSD Project/
 │
-├── app.py # Main Flask application
-├── create_db.py # Database initialization
+├── app.py # Main Flask application (entry point)
+├── create_db.py # Database initialization script
 ├── schema.sql # Database schema
 ├── exam_prep.db # SQLite database
 ├── requirements.txt # Python dependencies
 │
-├── templates/ # HTML templates (Jinja2)
-├── static/ # CSS and JavaScript files
-└── venv/ # Virtual environment
+├── templates/ # Jinja2 HTML templates
+│ ├── layout.html
+│ ├── index.html
+│ ├── login.html
+│ ├── register.html
+│ ├── user_dashboard.html
+│ ├── admin_dashboard.html
+│ ├── take_quiz.html
+│ ├── quiz_result.html
+│ └── ...
+│
+├── static/ # CSS and JS files
+│
+└── venv/ # Virtual environment (not required in deployment)
+
 ---
 
 ## Admin Credentials
